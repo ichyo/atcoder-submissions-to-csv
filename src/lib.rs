@@ -3,10 +3,13 @@ extern crate regex;
 extern crate reqwest;
 extern crate scraper;
 
+#[macro_use]
+extern crate serde_derive;
+
 use chrono::prelude::*;
 use scraper::{Html, Selector};
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Serialize)]
 pub struct Submission {
     created: DateTime<Local>,
     task: String,

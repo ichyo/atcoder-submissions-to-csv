@@ -4,8 +4,11 @@ version = "0.1.0"
 authors = ["ichyo <ichyo00@gmail.com>"]
 
 [dependencies]
-chrono = "0.4"
+chrono = { version = "0.4", features = ["serde"] }
 csv = "1.0.0-beta"
 scraper = "0.4"
 regex = "0.2"
 reqwest = "0.8"
+serde = "1.0"
+serde_derive = "1.0"
+docopt = "0.8"
