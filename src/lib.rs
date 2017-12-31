@@ -1,10 +1,10 @@
 extern crate chrono;
 extern crate regex;
+extern crate reqwest;
 extern crate scraper;
 
 use chrono::prelude::*;
 use scraper::{Html, Selector};
-use regex::Regex;
 
 #[derive(PartialEq, Debug)]
 pub struct Submission {
@@ -18,6 +18,8 @@ pub struct Submission {
     exec_time_ms: Option<i32>,
     memory_kb: Option<i32>,
 }
+
+static SUBMISSIONS_PER_PAGE: u32 = 20;
 
 impl Submission {
     fn from_html(html: &str) -> Vec<Submission> {
@@ -121,12 +123,39 @@ fn get_submissions_url(contest_id: &str, page: u32) -> String {
     )
 }
 
-fn fetch_and_parse_submission_page(contest_id: &str, page: u32) -> Vec<Submission> {
-    vec![]
+fn fetch_submission_page(contest_id: &str, page: u32) -> String {
+    let url = get_submissions_url(contest_id, page);
+    let mut resp = reqwest::get(&url).unwrap();
+    resp.text().unwrap()
 }
 
-pub fn fetch_submissions(contest_id: &str, start: u32, limit: u32) -> Vec<Submission> {
-    vec![]
+pub fn fetch_submissions(
+    contest_id: &str,
+    start: Option<u32>,
+    limit: Option<u32>,
+) -> Vec<Submission> {
+    let start = start.unwrap_or(0);
+    let mut page = start / SUBMISSIONS_PER_PAGE;
+    let mut skip = (start % SUBMISSIONS_PER_PAGE) as usize;
+    let mut limit = limit.unwrap_or(u32::max_value()) as usize;
+    let mut res = Vec::new();
+    loop {
+        let html = fetch_submission_page(contest_id, page);
+        let submissions = Submission::from_html(&html);
+        let mut submissions = submissions
+            .into_iter()
+            .skip(skip)
+            .take(limit)
+            .collect::<Vec<_>>();
+        if submissions.len() == 0 {
+            break;
+        }
+        page += 1;
+        skip = 0;
+        limit -= submissions.len();
+        res.append(&mut submissions);
+    }
+    res
 }
 
 #[cfg(test)]
